@@ -65,10 +65,10 @@ jobs:
           mkdir -p /opt/fbr-live-invoicing
           cd /opt/fbr-live-invoicing
           
-          # Stop and remove existing containers
-          echo "🛑 Stopping existing container..."
+          # Force stop and remove existing containers (with -f flag)
+          echo "🛑 Force stopping and removing existing container..."
           docker stop fbr-live-invoicing || true
-          docker rm fbr-live-invoicing || true
+          docker rm -f fbr-live-invoicing || true
           
           # Remove old images to save space
           echo "🧹 Cleaning up old images..."
@@ -101,7 +101,7 @@ jobs:
           sleep 15
           
           # Test health endpoint
-          echo "�� Testing health endpoint..."
+          echo "🔍 Testing health endpoint..."
           for i in {1..5}; do
             if curl -f http://localhost:3000/api/health; then
               echo "✅ Health check passed!"
