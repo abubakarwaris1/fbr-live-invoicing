@@ -27,8 +27,8 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "data:"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://api.nepcha.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
@@ -91,5 +91,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📱 Frontend will be available at http://localhost:${PORT}`);
-  console.log(`�� API endpoints available at http://localhost:${PORT}/api`);
+  console.log(`🔧 API endpoints available at http://localhost:${PORT}/api`);
 });
