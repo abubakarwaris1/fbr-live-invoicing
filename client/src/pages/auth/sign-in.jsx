@@ -65,50 +65,50 @@ export function SignIn() {
           </div>
           
           <div className="text-center w-80 max-w-screen-lg lg:w-1/2 mt-24">
-            <Typography variant="h1" className="font-black mb-4 text-5xl">Sign In</Typography>
-            <Typography variant="paragraph" color="blue-gray" className="text-lg font-normal">
-              Enter your email and password to Sign In.
-            </Typography>
-          </div>
+          <Typography variant="h1" className="font-black mb-4 text-5xl">Sign In</Typography>
+          <Typography variant="paragraph" color="blue-gray" className="text-lg font-normal">
+            Enter your email and password to Sign In.
+          </Typography>
+        </div>
           <form className="mt-8 mb-2 w-80 max-w-screen-lg lg:w-1/2" onSubmit={handleSubmit}>
           <div className="mb-1 flex flex-col gap-6">
             <div>
               <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                Your email
-              </Typography>
-              <Input
-                size="lg"
-                placeholder="name@mail.com"
-                variant="outlined"
-                color="blue-gray"
-                className="p-4 !border !border-gray-300 focus:!border-black transition-colors duration-200 !border-t-gray-300 focus:!border-t-black rounded-lg"
-                labelProps={{
-                  className: "before:content-none after:content-none",
-                }}
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-              />
+              Your email
+            </Typography>
+            <Input
+              size="lg"
+              placeholder="name@mail.com"
+              variant="outlined"
+              color="blue-gray"
+              className="p-4 !border !border-gray-300 focus:!border-black transition-colors duration-200 !border-t-gray-300 focus:!border-t-black rounded-lg"
+              labelProps={{
+                className: "before:content-none after:content-none",
+              }}
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+            />
             </div>
             <div>
               <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                Password
-              </Typography>
-              <Input
-                type="password"
-                size="lg"
-                placeholder="********"
-                variant="outlined"
-                color="blue-gray"
-                className="p-4 !border !border-gray-300 focus:!border-black transition-colors duration-200 !border-t-gray-300 focus:!border-t-black rounded-lg"
-                labelProps={{
-                  className: "before:content-none after:content-none",
-                }}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-              />
+              Password
+            </Typography>
+            <Input
+              type="password"
+              size="lg"
+              placeholder="********"
+              variant="outlined"
+              color="blue-gray"
+              className="p-4 !border !border-gray-300 focus:!border-black transition-colors duration-200 !border-t-gray-300 focus:!border-t-black rounded-lg"
+              labelProps={{
+                className: "before:content-none after:content-none",
+              }}
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+            />
             </div>
           </div>
 

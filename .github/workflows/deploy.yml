@@ -79,12 +79,20 @@ jobs:
           rm -rf /opt/fbr-live-invoicing/*
           cp -r /tmp/fbr-live-invoicing/* /opt/fbr-live-invoicing/
           
-          # Build the Docker image locally
-          echo "🔨 Building Docker image locally..."
-          docker build -t fbr-live-invoicing:latest .
+          # Build the frontend on the server
+          echo "🔨 Building frontend on server..."
+          cd /opt/fbr-live-invoicing
+          npm ci
+          cd client
+          npm run build
+          cd ..
           
-          # Run the application with environment variables
-          echo "🏃 Starting new container..."
+          # Build the backend Docker image
+          echo "🔨 Building backend Docker image..."
+          docker build -f Dockerfile.backend -t fbr-live-invoicing:latest .
+          
+          # Run the backend container
+          echo "🏃 Starting backend container..."
           docker run -d \
             --name fbr-live-invoicing \
             --restart unless-stopped \
