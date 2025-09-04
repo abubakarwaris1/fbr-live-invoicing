@@ -20,6 +20,11 @@ fi
 # Install Nginx
 apt-get install -y nginx
 
+# Configure firewall to allow HTTP and HTTPS
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw --force enable
+
 # Create application directory
 mkdir -p /opt/fbr-live-invoicing
 cd /opt/fbr-live-invoicing
@@ -67,14 +72,29 @@ networks:
     driver: bridge
 EOL
 
-# Configure Nginx
+# Configure Nginx as reverse proxy
 cat > /etc/nginx/sites-available/fbr-live-invoicing << EOL
 server {
-    listen 80;
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
     server_name _;
-
-    # Serve your application
+    
+    # Frontend (React app)
     location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+    
+    # API endpoints
+    location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
@@ -88,7 +108,7 @@ server {
 }
 EOL
 
-# Enable the site
+# Enable the site and remove default
 ln -sf /etc/nginx/sites-available/fbr-live-invoicing /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
@@ -107,3 +127,5 @@ echo "📝 Next steps:"
 echo "1. Update .env file with actual values"
 echo "2. Run: docker-compose up -d"
 echo "3. Check logs: docker-compose logs -f"
+echo "✅ Firewall configured to allow HTTP/HTTPS"
+echo "✅ Nginx configured as reverse proxy"

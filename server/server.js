@@ -22,8 +22,24 @@ const PORT = process.env.PORT || 3000;
 // Connect to MongoDB
 connectDB();
 
-// Middleware
-app.use(helmet());
+// Configure helmet with relaxed CSP for development/production
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://api.nepcha.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginOpenerPolicy: false, // Disable COOP to avoid browser warnings
+}));
+
 app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
@@ -75,5 +91,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📱 Frontend will be available at http://localhost:${PORT}`);
-  console.log(`🔧 API endpoints available at http://localhost:${PORT}/api`);
-}); 
+  console.log(`�� API endpoints available at http://localhost:${PORT}/api`);
+});
