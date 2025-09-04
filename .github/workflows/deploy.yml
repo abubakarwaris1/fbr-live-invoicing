@@ -40,6 +40,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: root
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        source: "."
+        target: "/tmp/fbr-live-invoicing"
+        strip_components: 1
+
     - name: Deploy application to server
       uses: appleboy/ssh-action@v1.0.0
       with:
@@ -61,7 +71,7 @@ jobs:
           docker rm fbr-live-invoicing || true
           
           # Remove old images to save space
-          echo "�� Cleaning up old images..."
+          echo "🧹 Cleaning up old images..."
           docker rmi fbr-live-invoicing:latest || true
           
           # Copy application files
@@ -91,7 +101,7 @@ jobs:
           sleep 15
           
           # Test health endpoint
-          echo "🔍 Testing health endpoint..."
+          echo "�� Testing health endpoint..."
           for i in {1..5}; do
             if curl -f http://localhost:3000/api/health; then
               echo "✅ Health check passed!"
@@ -107,16 +117,6 @@ jobs:
           docker system prune -f
           
           echo "🎉 Deployment completed successfully!"
-
-    - name: Copy files to server
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: root
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        source: "."
-        target: "/tmp/fbr-live-invoicing"
-        strip_components: 1
 
     - name: Comment deployment info
       uses: actions/github-script@v7
