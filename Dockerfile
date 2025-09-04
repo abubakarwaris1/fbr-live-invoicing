@@ -1,18 +1,15 @@
 # Multi-stage build for FBR Live Invoicing App
 FROM node:18-alpine AS base
 
-
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY client/package*.json ./client/
-COPY server/package*.json ./server/
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Build stage
 FROM base AS builder
@@ -20,8 +17,6 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY client/package*.json ./client/
-COPY server/package*.json ./server/
 
 # Install all dependencies (including dev dependencies)
 RUN npm ci
@@ -45,8 +40,6 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/client/dist ./client/dist
 COPY --from=builder /app/server ./server
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/client/node_modules ./client/node_modules
-COPY --from=deps /app/server/node_modules ./server/node_modules
 COPY package*.json ./
 
 # Set ownership
