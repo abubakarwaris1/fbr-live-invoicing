@@ -1,0 +1,166 @@
+const theme = {
+  input: {
+    defaultProps: {
+      variant: "outlined",
+      size: "md",
+      color: "blue-gray",
+      label: "",
+      error: false,
+      success: false,
+      icon: undefined,
+      labelProps: {},
+      containerProps: {},
+      shrink: false,
+    },
+    styles: {
+      base: {
+        container: {
+          position: "relative",
+          width: "w-full",
+          minWidth: "min-w-[200px]",
+        },
+        input: {
+          peer: "peer",
+          width: "w-full",
+          height: "h-full",
+          minHeight: "min-h-[44px]",
+          bg: "bg-transparent",
+          color: "text-blue-gray-700",
+          fontFamily: "font-sans",
+          fontSize: "text-base",
+          fontWeight: "font-normal",
+          outline: "outline outline-0 focus:outline-0",
+          disabled: "disabled:bg-blue-gray-50 disabled:border-0 disabled:cursor-not-allowed",
+          transition: "transition-all duration-300",
+          placeholder: "placeholder:text-blue-gray-500 placeholder:opacity-100 focus:placeholder:opacity-100",
+          borderWidth: "border border-t-transparent",
+          borderColor: "border-blue-gray-200 focus:border-t-transparent focus:border-blue-gray-500",
+          floated: {
+            borderWidth: "border-2",
+            borderColor: "border-transparent focus:border-blue-gray-500",
+          },
+          error: {
+            borderColor: "border-red-500 focus:border-red-500",
+            borderColorFloated: "focus:border-red-500",
+          },
+          success: {
+            borderColor: "border-green-500 focus:border-green-500",
+            borderColorFloated: "focus:border-green-500",
+          },
+        },
+        inputIcon: {
+          display: "grid",
+          placeItems: "place-items-center",
+          position: "absolute",
+          top: "top-2/4",
+          right: "right-3",
+          transform: "-translate-y-2/4",
+          pointerEvents: "pointer-events-none",
+          color: "text-blue-gray-500",
+          fontSize: "text-[18px]",
+          transition: "transition-colors duration-300",
+          peerFocus: "peer-focus:text-blue-gray-500",
+        },
+        label: {
+          display: "grid",
+          placeItems: "place-items-center",
+          position: "absolute",
+          left: "left-0",
+          top: "top-0",
+          pointerEvents: "pointer-events-none",
+          transformOrigin: "origin-[0]",
+          transition: "transition-all duration-300",
+          disabled: "peer-disabled:cursor-not-allowed peer-disabled:text-blue-gray-500",
+          color: "text-blue-gray-500 peer-focus:text-blue-gray-500",
+          fontSize: "text-[11px] font-normal",
+          fontWeight: "font-normal",
+          lineHeight: "leading-tight peer-focus:text-[11px]",
+          overflow: "overflow-visible",
+          textOverflow: "text-ellipsis",
+          whiteSpace: "whitespace-nowrap",
+          maxWidth: "max-w-[calc(133%-1.5rem)]",
+          floated: {
+            fontSize: "text-[11px] font-normal",
+            lineHeight: "leading-tight peer-focus:text-[11px]",
+            maxWidth: "max-w-[calc(133%-1.5rem)]",
+          },
+        },
+        asterisk: {
+          display: "inline-block",
+          color: "text-red-500",
+          ml: "ml-0.5",
+        },
+      },
+      variants: {
+        outlined: {
+          base: {
+            input: {
+              borderTopWidth: "border-t-transparent",
+              borderLeftWidth: "border-l-transparent",
+              borderRightWidth: "border-r-transparent",
+              borderBottomWidth: "border-b border-b-blue-gray-200",
+              borderRadius: "rounded-none",
+              placeholder: "placeholder:text-blue-gray-500",
+              peerFocus: "peer-focus:border-b-2 peer-focus:border-b-blue-gray-500 peer-focus:border-t-transparent peer-focus:border-l-transparent peer-focus:border-r-transparent peer-focus:bg-transparent",
+              peerPlaceholderShown: "peer-placeholder-shown:border-b-blue-gray-200",
+            },
+            inputIcon: {
+              color: "text-blue-gray-500",
+              peerFocus: "peer-focus:text-blue-gray-500",
+            },
+            label: {
+              position: "absolute",
+              top: "top-2/4",
+              left: "left-0",
+              transform: "-translate-y-1/2",
+              fontSize: "text-sm",
+              fontWeight: "font-normal",
+              color: "text-blue-gray-500",
+              lineHeight: "leading-tight peer-focus:text-[11px] peer-focus:text-blue-gray-500 peer-focus:-top-2.5 peer-focus:left-0",
+              peerPlaceholderShown: "peer-placeholder-shown:text-sm peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:top-2/4 peer-placeholder-shown:left-0",
+              peerFocus: "peer-focus:-top-2.5 peer-focus:left-0 peer-focus:text-[11px] peer-focus:text-blue-gray-500",
+            },
+          },
+        },
+      },
+    },
+  },
+  button: {
+    defaultProps: {
+      variant: "filled",
+      size: "md",
+      color: "blue-gray",
+      fullWidth: false,
+      ripple: true,
+      className: "",
+    },
+    styles: {
+      base: {
+        initial: {
+          textTransform: "normal",
+          fontWeight: "font-medium",
+          transition: "transition-all duration-300",
+          disabled: "disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none",
+        },
+        fullWidth: {
+          display: "block",
+          width: "w-full",
+        },
+      },
+      variants: {
+        filled: {
+          black: {
+            background: "bg-black",
+            color: "text-white",
+            shadow: "shadow-md shadow-black/20",
+            hover: "hover:shadow-lg hover:shadow-black/40",
+            focus: "focus:opacity-[0.85] focus:shadow-none",
+            active: "active:opacity-[0.85] active:shadow-none",
+          },
+        },
+      },
+    },
+  },
+};
+
+export default theme; 

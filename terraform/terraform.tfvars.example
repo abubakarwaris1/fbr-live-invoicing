@@ -1,0 +1,25 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# DigitalOcean API Token (required)
+digitalocean_token = "your_digitalocean_token_here"
+
+# Application name
+app_name = "fbr-live-invoicing"
+
+# DigitalOcean region
+region = "nyc3"
+
+# Droplet size - Updated to 1 vCPU, 2GB RAM
+droplet_size = "s-1vcpu-2gb"
+
+# Database size
+db_size = "db-s-1vcpu-1gb"
+
+# Domain name (optional - leave empty if not using custom domain)
+
+# Enable SSL (requires domain name)
+
+# SSH key path
+
+# Domain name (optional - for A record setup)
+domain_name = ""

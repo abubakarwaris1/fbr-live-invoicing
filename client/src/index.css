@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Material Tailwind specific styles */
+@layer components {
+  .material-tailwind-input {
+    @apply peer w-full h-full min-h-[44px] bg-transparent text-blue-gray-700 font-sans text-base font-normal outline outline-0 focus:outline-0 disabled:bg-blue-gray-50 disabled:border-0 disabled:cursor-not-allowed transition-all duration-300 placeholder:text-blue-gray-500 placeholder:opacity-100 focus:placeholder:opacity-100 border border-t-transparent border-blue-gray-200 focus:border-t-transparent focus:border-blue-gray-500;
+  }
+  
+  .material-tailwind-input-outlined {
+    @apply border-t-transparent border-l-transparent border-r-transparent border-b border-b-blue-gray-200 rounded-none placeholder:text-blue-gray-500 peer-focus:border-b-2 peer-focus:border-b-blue-gray-500 peer-focus:border-t-transparent peer-focus:border-l-transparent peer-focus:border-r-transparent;
+  }
+  
+  .material-tailwind-label {
+    @apply absolute top-2/4 left-0 -translate-y-1/2 text-sm font-normal text-blue-gray-500 leading-tight peer-focus:text-[11px] peer-focus:text-blue-gray-500 peer-focus:-top-2.5 peer-focus:left-0 peer-placeholder-shown:text-sm peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:top-2/4 peer-placeholder-shown:left-0;
+  }
+} 
