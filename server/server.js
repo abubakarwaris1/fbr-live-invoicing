@@ -34,7 +34,7 @@ app.use(helmet({
       connectSrc: ["'self'"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
+      // Removed upgradeInsecureRequests to allow HTTP requests
     },
   },
   crossOriginOpenerPolicy: false, // Disable COOP to avoid browser warnings
