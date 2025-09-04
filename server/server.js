@@ -53,7 +53,7 @@ app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
-    message: 'FBR Live Invoicing API is running',
+    message: 'FBR Live Invoicing API is running perfectly',
     timestamp: new Date().toISOString()
   });
 });
