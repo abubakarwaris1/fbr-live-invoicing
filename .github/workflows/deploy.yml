@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      server_ip:
-        description: 'Server IP address'
-        required: true
-        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -93,28 +88,44 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Get server IP
-      id: server-ip
-      run: |
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          echo "ip=${{ github.event.inputs.server_ip }}" >> $GITHUB_OUTPUT
-        else
-          # You can set a default IP or get it from terraform output
-          echo "ip=${{ secrets.SERVER_IP }}" >> $GITHUB_OUTPUT
-        fi
-
     - name: Deploy application to server
       uses: appleboy/ssh-action@v1.0.0
       with:
-        host: ${{ steps.server-ip.outputs.ip }}
+        host: ${{ secrets.SERVER_IP }}
         username: root
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
+          # Create application directory
+          mkdir -p /opt/fbr-live-invoicing
           cd /opt/fbr-live-invoicing
+          
+          # Stop any existing containers
+          docker stop fbr-live-invoicing || true
+          docker rm fbr-live-invoicing || true
+          
+          # Pull the latest image
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker-compose down
-          docker-compose up -d
+          
+          # Run the application with environment variables
+          docker run -d \
+            --name fbr-live-invoicing \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            -e NODE_ENV=production \
+            -e PORT=3000 \
+            -e MONGODB_URI="${{ secrets.MONGODB_URI }}" \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e FBR_ACCESS_TOKEN="${{ secrets.FBR_ACCESS_TOKEN }}" \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          # Clean up old images
           docker system prune -f
+          
+          # Wait for application to start
+          sleep 10
+          
+          # Test health endpoint
+          curl -f http://localhost:3000/api/health || exit 1
 
     - name: Comment deployment info
       uses: actions/github-script@v7
@@ -127,9 +138,9 @@ jobs:
             repo: context.repo.repo,
             body: `🚀 **Application Deployment Successful!**
             
-            **Server IP:** ${{ steps.server-ip.outputs.ip }}
-            **API Base URL:** http://${{ steps.server-ip.outputs.ip }}:3000
-            **Health Check:** http://${{ steps.server-ip.outputs.ip }}:3000/api/health`
+            **Server IP:** ${{ secrets.SERVER_IP }}
+            **API Base URL:** http://${{ secrets.SERVER_IP }}/api
+            **Health Check:** http://${{ secrets.SERVER_IP }}/api/health`
           })
 
   notify:
