@@ -1,6 +1,7 @@
 # Multi-stage build for FBR Live Invoicing App
 FROM node:18-alpine AS base
 
+
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
