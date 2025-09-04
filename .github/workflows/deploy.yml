@@ -95,18 +95,29 @@ jobs:
         username: root
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
+          set -e  # Exit on any error
+          
+          echo "🚀 Starting deployment..."
+          
           # Create application directory
           mkdir -p /opt/fbr-live-invoicing
           cd /opt/fbr-live-invoicing
           
-          # Stop any existing containers
+          # Login to GitHub Container Registry
+          echo "🔐 Logging into GitHub Container Registry..."
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          
+          # Stop and remove existing containers
+          echo "🛑 Stopping existing container..."
           docker stop fbr-live-invoicing || true
           docker rm fbr-live-invoicing || true
           
           # Pull the latest image
+          echo "📥 Pulling latest image..."
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           
           # Run the application with environment variables
+          echo "🏃 Starting new container..."
           docker run -d \
             --name fbr-live-invoicing \
             --restart unless-stopped \
@@ -118,14 +129,27 @@ jobs:
             -e FBR_ACCESS_TOKEN="${{ secrets.FBR_ACCESS_TOKEN }}" \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           
-          # Clean up old images
-          docker system prune -f
-          
           # Wait for application to start
-          sleep 10
+          echo "⏳ Waiting for application to start..."
+          sleep 15
           
           # Test health endpoint
-          curl -f http://localhost:3000/api/health || exit 1
+          echo "🔍 Testing health endpoint..."
+          for i in {1..5}; do
+            if curl -f http://localhost:3000/api/health; then
+              echo "✅ Health check passed!"
+              break
+            else
+              echo "❌ Health check failed, attempt $i/5"
+              sleep 5
+            fi
+          done
+          
+          # Clean up old images
+          echo "🧹 Cleaning up old images..."
+          docker system prune -f
+          
+          echo "🎉 Deployment completed successfully!"
 
     - name: Comment deployment info
       uses: actions/github-script@v7
