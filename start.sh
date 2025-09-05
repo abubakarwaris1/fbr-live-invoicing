@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Start Express.js backend in the background
 echo "Starting Express.js backend on port 3001..."

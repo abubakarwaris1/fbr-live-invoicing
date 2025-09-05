@@ -1,6 +1,6 @@
 output "app_url" {
   description = "URL of the application (web interface)"
-  value       = var.domain_name != "" ? "https://${var.domain_name}" : "http://${digitalocean_reserved_ip.main.ip_address}:3000"
+  value       = var.domain_name != "" ? "https://${var.domain_name}" : "http://${digitalocean_reserved_ip.main.ip_address}"
 }
 
 output "api_static_ip" {
@@ -10,15 +10,15 @@ output "api_static_ip" {
 
 output "api_url" {
   description = "API URL using static IP"
-  value       = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}:3000/api"
+  value       = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}/api"
 }
 
 output "api_endpoints" {
   description = "Available API endpoints"
   value = {
-    health_check = "http://${digitalocean_reserved_ip.main.ip_address}:3000/api/health"
-    auth = "http://${digitalocean_reserved_ip.main.ip_address}:3000/api/auth"
-    invoices = "http://${digitalocean_reserved_ip.main.ip_address}:3000/api/gov-invoices"
+    health_check = "http://${digitalocean_reserved_ip.main.ip_address}/api/health"
+    auth = "http://${digitalocean_reserved_ip.main.ip_address}/api/auth"
+    invoices = "http://${digitalocean_reserved_ip.main.ip_address}/api/gov-invoices"
   }
 }
 
@@ -62,10 +62,10 @@ output "database_password" {
 output "government_integration_info" {
   description = "Information for government system integration"
   value = {
-    api_base_url = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}:3000/api"
+    api_base_url = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}/api"
     static_ip = digitalocean_reserved_ip.main.ip_address
-    port = 3000
-    health_check = "http://${digitalocean_reserved_ip.main.ip_address}:3000/api/health"
+    port = 80
+    health_check = "http://${digitalocean_reserved_ip.main.ip_address}/api/health"
     note = "This static IP will not change even if the server is destroyed and recreated"
   }
 }

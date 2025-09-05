@@ -74,7 +74,7 @@ resource "digitalocean_reserved_ip_assignment" "main" {
   droplet_id = digitalocean_droplet.main.id
 }
 
-# Create firewall - simplified for container-based nginx
+# Create firewall - with port 80 for nginx proxy
 resource "digitalocean_firewall" "main" {
   name = "${var.app_name}-firewall"
 
@@ -87,10 +87,10 @@ resource "digitalocean_firewall" "main" {
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
-  # HTTP access - nginx inside container
+  # HTTP access - nginx proxy on host
   inbound_rule {
     protocol         = "tcp"
-    port_range       = "3000"
+    port_range       = "80"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
@@ -98,6 +98,13 @@ resource "digitalocean_firewall" "main" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "443"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # Direct container access (optional)
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "3000"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
