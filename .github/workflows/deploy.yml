@@ -59,70 +59,79 @@ jobs:
         script: |
           set -e  # Exit on any error
           
-          echo "🚀 Starting deployment..."
+          echo "🚀 Starting deployment with nginx inside container..."
           
           # Create application directory
           mkdir -p /opt/fbr-live-invoicing
           cd /opt/fbr-live-invoicing
           
-          # Force stop and remove existing containers (with -f flag)
-          echo "🛑 Force stopping and removing existing container..."
+          # Stop and remove existing containers
+          echo "🛑 Stopping and removing existing containers..."
+          docker-compose down || true
           docker stop fbr-live-invoicing || true
           docker rm -f fbr-live-invoicing || true
           
           # Remove old images to save space
           echo "🧹 Cleaning up old images..."
           docker rmi fbr-live-invoicing:latest || true
+          docker system prune -f || true
           
           # Copy application files
           echo "📁 Copying application files..."
           rm -rf /opt/fbr-live-invoicing/*
           cp -r /tmp/fbr-live-invoicing/* /opt/fbr-live-invoicing/
           
-          # Build the frontend on the server
-          echo "🔨 Building frontend on server..."
+          # Create .env file with secrets
+          echo "📝 Creating environment file..."
+          cat > /opt/fbr-live-invoicing/.env << EOL
+          NODE_ENV=production
+          PORT=3001
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          FBR_ACCESS_TOKEN=${{ secrets.FBR_ACCESS_TOKEN }}
+          STATIC_IP=${{ secrets.STATIC_IP }}
+          EOL
+          
+          # Build and start the container with nginx inside
+          echo "🔨 Building and starting container with nginx..."
           cd /opt/fbr-live-invoicing
-          npm ci
-          cd client
-          npm run build
-          cd ..
-          
-          # Build the backend Docker image
-          echo "🔨 Building backend Docker image..."
-          docker build -f Dockerfile.backend -t fbr-live-invoicing:latest .
-          
-          # Run the backend container
-          echo "🏃 Starting backend container..."
-          docker run -d \
-            --name fbr-live-invoicing \
-            --restart unless-stopped \
-            -p 3000:3000 \
-            -e NODE_ENV=production \
-            -e PORT=3000 \
-            -e MONGODB_URI="${{ secrets.MONGODB_URI }}" \
-            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            -e FBR_ACCESS_TOKEN="${{ secrets.FBR_ACCESS_TOKEN }}" \
-            fbr-live-invoicing:latest
+          docker-compose up -d --build
           
           # Wait for application to start
           echo "⏳ Waiting for application to start..."
-          sleep 15
+          sleep 30
           
           # Test health endpoint
           echo "🔍 Testing health endpoint..."
-          for i in {1..5}; do
-            if curl -f http://localhost:3000/api/health; then
-              echo "✅ Health check passed!"
+          for i in {1..10}; do
+            if curl -f http://localhost:3000/health; then
+              echo "✅ Nginx health check passed!"
               break
             else
-              echo "❌ Health check failed, attempt $i/5"
+              echo "❌ Nginx health check failed, attempt $i/10"
               sleep 5
             fi
           done
           
-          # Clean up old images
-          echo "🧹 Cleaning up old images..."
-          docker system prune -f
+          # Test API endpoint
+          echo "🔍 Testing API endpoint..."
+          for i in {1..5}; do
+            if curl -f http://localhost:3000/api/health; then
+              echo "✅ API health check passed!"
+              break
+            else
+              echo "❌ API health check failed, attempt $i/5"
+              sleep 5
+            fi
+          done
+          
+          # Show container status
+          echo "📊 Container status:"
+          docker-compose ps
+          
+          # Show logs
+          echo "📋 Recent logs:"
+          docker-compose logs --tail=20
           
           echo "🎉 Deployment completed successfully!"
 
@@ -138,8 +147,13 @@ jobs:
             body: `🚀 **Application Deployment Successful!**
             
             **Server IP:** ${{ secrets.SERVER_IP }}
-            **API Base URL:** http://${{ secrets.SERVER_IP }}/api
-            **Health Check:** http://${{ secrets.SERVER_IP }}/api/health`
+            **Static IP:** ${{ secrets.STATIC_IP }}
+            **Web Interface:** http://${{ secrets.STATIC_IP }}:3000
+            **API Base URL:** http://${{ secrets.STATIC_IP }}:3000/api
+            **Health Check:** http://${{ secrets.STATIC_IP }}:3000/health
+            **API Health:** http://${{ secrets.STATIC_IP }}:3000/api/health
+            
+            **Architecture:** Nginx inside container on port 3000, Express.js backend on port 3001`
           })
 
   notify:
@@ -152,6 +166,8 @@ jobs:
       run: |
         if [ "${{ needs.deploy.result }}" == "success" ]; then
           echo "✅ Application deployment successful!"
+          echo "🌐 Web Interface: http://${{ secrets.STATIC_IP }}:3000"
+          echo "🔗 API Base URL: http://${{ secrets.STATIC_IP }}:3000/api"
         else
           echo "❌ Application deployment failed!"
         fi

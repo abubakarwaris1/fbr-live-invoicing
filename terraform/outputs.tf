@@ -1,6 +1,6 @@
 output "app_url" {
   description = "URL of the application (web interface)"
-  value       = var.domain_name != "" ? "https://${var.domain_name}" : "http://${digitalocean_droplet.main.ipv4_address}"
+  value       = var.domain_name != "" ? "https://${var.domain_name}" : "http://${digitalocean_reserved_ip.main.ip_address}:3000"
 }
 
 output "api_static_ip" {
@@ -10,7 +10,7 @@ output "api_static_ip" {
 
 output "api_url" {
   description = "API URL using static IP"
-  value       = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}/api"
+  value       = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}:3000/api"
 }
 
 output "api_endpoints" {
@@ -32,7 +32,6 @@ output "droplet_ip" {
   description = "IP address of the droplet"
   value       = digitalocean_droplet.main.ipv4_address
 }
-
 
 output "database_host" {
   description = "Database host"
@@ -63,7 +62,7 @@ output "database_password" {
 output "government_integration_info" {
   description = "Information for government system integration"
   value = {
-    api_base_url = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}/api"
+    api_base_url = var.domain_name != "" ? "https://${var.domain_name}/api" : "http://${digitalocean_reserved_ip.main.ip_address}:3000/api"
     static_ip = digitalocean_reserved_ip.main.ip_address
     port = 3000
     health_check = "http://${digitalocean_reserved_ip.main.ip_address}:3000/api/health"

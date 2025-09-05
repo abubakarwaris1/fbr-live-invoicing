@@ -52,21 +52,20 @@ resource "digitalocean_database_db" "main" {
 }
 
 # Create database user
-# Create database user
-# Create database user
 resource "digitalocean_database_user" "main" {
   cluster_id = digitalocean_database_cluster.main.id
   name       = "${var.app_name}-user"
 }
 
-# Create droplet (NO user_data script)
+# Create droplet with user_data script
 resource "digitalocean_droplet" "main" {
-  image    = "docker-20-04"
-  name     = "${var.app_name}-server"
-  region   = var.region
-  size     = var.droplet_size
-  vpc_uuid = digitalocean_vpc.main.id
-  ssh_keys = [digitalocean_ssh_key.main.id]
+  image     = "docker-20-04"
+  name      = "${var.app_name}-server"
+  region    = var.region
+  size      = var.droplet_size
+  vpc_uuid  = digitalocean_vpc.main.id
+  ssh_keys  = [digitalocean_ssh_key.main.id]
+  user_data = file("${path.module}/user_data.sh")
 }
 
 # Attach reserved IP to droplet
@@ -75,27 +74,30 @@ resource "digitalocean_reserved_ip_assignment" "main" {
   droplet_id = digitalocean_droplet.main.id
 }
 
-# Create firewall
+# Create firewall - simplified for container-based nginx
 resource "digitalocean_firewall" "main" {
   name = "${var.app_name}-firewall"
 
   droplet_ids = [digitalocean_droplet.main.id]
 
+  # SSH access
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "80"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
-
+  # HTTP access - nginx inside container
   inbound_rule {
     protocol         = "tcp"
     port_range       = "3000"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # HTTPS access (for future SSL setup)
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "443"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 

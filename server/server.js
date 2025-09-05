@@ -17,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001; // Changed to 3001 for nginx proxy
 
 // Connect to MongoDB
 connectDB();
@@ -40,14 +40,10 @@ app.use(helmet({
   crossOriginOpenerPolicy: false, // Disable COOP to avoid browser warnings
 }));
 
-
 app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from the React app build directory
-app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // API Routes
 app.get('/api/health', (req, res) => {
@@ -75,11 +71,6 @@ app.get('/api/example', (req, res) => {
   });
 });
 
-// Catch all handler: send back React's index.html file for any non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -90,7 +81,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`📱 Frontend will be available at http://localhost:${PORT}`);
+  console.log(`🚀 Backend server is running on port ${PORT}`);
   console.log(`🔧 API endpoints available at http://localhost:${PORT}/api`);
 });

@@ -4,10 +4,10 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "3000:3000"  # Nginx inside container on port 3000
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3001    # Express.js backend on port 3001
       - MONGODB_URI=${MONGODB_URI}
       - JWT_SECRET=${JWT_SECRET}
       - FBR_ACCESS_TOKEN=${FBR_ACCESS_TOKEN}
@@ -15,7 +15,7 @@ services:
       - .env
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

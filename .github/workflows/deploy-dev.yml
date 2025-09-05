@@ -1,0 +1,127 @@
+name: Deploy Development
+
+on:
+  push:
+    branches: [ develop, dev, feature/* ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests (if any)
+      run: npm test --if-present
+
+    - name: Build client
+      run: npm run build:client
+
+  deploy-dev:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+    environment: development
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: root
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        source: "."
+        target: "/tmp/fbr-live-invoicing-dev"
+        strip_components: 1
+
+    - name: Deploy development application
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: root
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          set -e
+          
+          echo "🚀 Starting development deployment..."
+          
+          # Create development directory
+          mkdir -p /opt/fbr-live-invoicing-dev
+          cd /opt/fbr-live-invoicing-dev
+          
+          # Stop existing dev containers
+          echo "🛑 Stopping existing dev containers..."
+          docker-compose down || true
+          docker stop fbr-live-invoicing-dev || true
+          docker rm -f fbr-live-invoicing-dev || true
+          
+          # Copy application files
+          echo "📁 Copying application files..."
+          rm -rf /opt/fbr-live-invoicing-dev/*
+          cp -r /tmp/fbr-live-invoicing-dev/* /opt/fbr-live-invoicing-dev/
+          
+          # Create .env file for development
+          echo "📝 Creating development environment file..."
+          cat > /opt/fbr-live-invoicing-dev/.env << EOL
+          NODE_ENV=development
+          PORT=3001
+          MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          FBR_ACCESS_TOKEN=${{ secrets.FBR_ACCESS_TOKEN }}
+          STATIC_IP=${{ secrets.STATIC_IP }}
+          EOL
+          
+          # Update docker-compose for development (different port)
+          echo "🔧 Configuring for development..."
+          sed -i 's/3000:3000/3001:3000/g' /opt/fbr-live-invoicing-dev/docker-compose.yml
+          
+          # Build and start development container
+          echo "🔨 Building and starting development container..."
+          cd /opt/fbr-live-invoicing-dev
+          docker-compose up -d --build
+          
+          # Wait and test
+          echo "⏳ Waiting for development application..."
+          sleep 30
+          
+          if curl -f http://localhost:3001/health; then
+            echo "✅ Development deployment successful!"
+          else
+            echo "❌ Development deployment failed!"
+            exit 1
+          fi
+          
+          echo "🎉 Development deployment completed!"
+
+    - name: Comment development deployment
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 **Development Deployment Successful!**
+            
+            **Branch:** ${{ github.ref_name }}
+            **Server IP:** ${{ secrets.SERVER_IP }}
+            **Development URL:** http://${{ secrets.SERVER_IP }}:3001
+            **API Base URL:** http://${{ secrets.SERVER_IP }}:3001/api
+            
+            **Note:** This is a development deployment on port 3001`
+          })
