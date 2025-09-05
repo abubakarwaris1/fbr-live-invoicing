@@ -17,9 +17,6 @@ if ! command -v docker-compose &> /dev/null; then
     chmod +x /usr/local/bin/docker-compose
 fi
 
-# Install nginx on the host server
-apt-get install -y nginx
-
 # Configure firewall properly - ALLOW SSH, not LIMIT
 echo "🔧 Configuring UFW firewall..."
 ufw --force reset
@@ -38,44 +35,6 @@ ufw allow 3000/tcp
 
 # Enable firewall
 ufw --force enable
-
-# Configure nginx on host to proxy to container
-echo "🔧 Configuring nginx proxy..."
-cat > /etc/nginx/sites-available/fbr-live-invoicing << 'NGINX_CONFIG'
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    
-    server_name _;
-    
-    # Proxy all requests to container on port 3000
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        proxy_read_timeout 300;
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
-    }
-}
-NGINX_CONFIG
-
-# Enable the site and remove default
-ln -sf /etc/nginx/sites-available/fbr-live-invoicing /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-
-# Test nginx configuration
-nginx -t
-
-# Start and enable nginx
-systemctl start nginx
-systemctl enable nginx
 
 # Verify firewall status
 echo "📋 Firewall status:"
@@ -138,6 +97,7 @@ echo "2. Copy your application code to /opt/fbr-live-invoicing/"
 echo "3. Run: docker-compose up -d"
 echo "4. Check logs: docker-compose logs -f"
 echo "✅ Firewall configured to ALLOW SSH (not LIMIT)"
-echo "✅ Nginx proxy configured on port 80 → container port 3000"
 echo "✅ Docker and Docker Compose installed"
-echo "✅ Application accessible without port number"
+echo "✅ Application directory created"
+echo "✅ Ready for container deployment with nginx inside container"
+
