@@ -10,7 +10,7 @@ import {
 } from "@material-tailwind/react";
 import { PlusIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { GovInvoiceModal } from "@/features/invoice/GovInvoiceModal";
-import { submitGovInvoice, fetchGovInvoices } from "@/services/govSubmit";
+import { submitGovInvoice, getGovInvoices } from "@/services/govSubmit";
 
 export function Invoices() {
   const [invoices, setInvoices] = useState([]);
@@ -27,7 +27,7 @@ export function Invoices() {
   const loadInvoices = async () => {
     try {
       setLoading(true);
-      const result = await fetchGovInvoices();
+      const result = await getGovInvoices();
       
       if (result.ok) {
         setInvoices(result.data || []);

@@ -2,8 +2,7 @@
  * Authentication service for handling login, logout, and token management
  */
 
-// Use relative URL for production, fallback to localhost for development
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api');
+import { API_ENDPOINTS, getDefaultHeaders, getAuthHeaders } from '../config/api.js';
 
 // Token management
 export const getToken = () => {
@@ -18,14 +17,6 @@ export const removeToken = () => {
   localStorage.removeItem('authToken');
 };
 
-export const getAuthHeaders = () => {
-  const token = getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
-
 /**
  * User login
  * @param {Object} credentials - { email, password }
@@ -33,11 +24,9 @@ export const getAuthHeaders = () => {
  */
 export async function login(credentials) {
   try {
-    const response = await fetch(`${API_BASE}/auth/login`, {
+    const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getDefaultHeaders(),
       body: JSON.stringify(credentials),
     });
 
@@ -72,7 +61,7 @@ export async function login(credentials) {
  */
 export async function logout() {
   try {
-    const response = await fetch(`${API_BASE}/auth/logout`, {
+    const response = await fetch(API_ENDPOINTS.AUTH.LOGOUT, {
       method: 'POST',
       headers: getAuthHeaders(),
     });
@@ -107,7 +96,7 @@ export async function logout() {
  */
 export async function getCurrentUser() {
   try {
-    const response = await fetch(`${API_BASE}/auth/me`, {
+    const response = await fetch(API_ENDPOINTS.AUTH.ME, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -145,7 +134,7 @@ export async function getCurrentUser() {
  */
 export async function changePassword(passwords) {
   try {
-    const response = await fetch(`${API_BASE}/auth/change-password`, {
+    const response = await fetch(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(passwords),

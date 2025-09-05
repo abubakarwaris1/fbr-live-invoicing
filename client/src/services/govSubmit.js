@@ -3,21 +3,15 @@
  * @param {Object} payload - The invoice data to submit
  * @returns {Promise<{ok: boolean, status: number, data?: any, error?: string}>}
  */
+
+import { API_ENDPOINTS, getAuthHeaders } from '../config/api.js';
+
 export async function submitGovInvoice(payload) {
   const makeRequest = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const headers = {
-        "Content-Type": "application/json",
-      };
-      
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const response = await fetch("http://localhost:3000/api/gov-invoices", {
+      const response = await fetch(API_ENDPOINTS.GOV_INVOICES.BASE, {
         method: "POST",
-        headers,
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
@@ -34,56 +28,56 @@ export async function submitGovInvoice(payload) {
         return {
           ok: false,
           status: response.status,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
-          errors: data.errors || []
+          error: data.message || 'Failed to submit invoice'
         };
       }
     } catch (error) {
-      // Network or parsing error
-      throw error;
-    }
-  };
-
-  try {
-    // First attempt
-    return await makeRequest();
-  } catch (error) {
-    // Retry once on network failure
-    try {
-      console.log("First attempt failed, retrying...", error.message);
-      return await makeRequest();
-    } catch (retryError) {
       return {
         ok: false,
         status: 0,
-        error: `Network error after retry: ${retryError.message}`,
+        error: `Network error: ${error.message}`
       };
     }
+  };
+
+  // Retry logic
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const result = await makeRequest();
+    if (result.ok) {
+      return result;
+    }
+    
+    if (attempt < 3) {
+      console.log(`Attempt ${attempt} failed, retrying...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
   }
+  
+  return await makeRequest(); // Final attempt
 }
 
 /**
- * Fetch all government invoices
- * @param {Object} params - Query parameters (page, limit, status, etc.)
- * @returns {Promise<{ok: boolean, status: number, data?: any, error?: string}>}
+ * Get all government invoices with pagination and filtering
+ * @param {Object} filters - Filter options
+ * @returns {Promise<{ok: boolean, data?: any, pagination?: any, error?: string}>}
  */
-export async function fetchGovInvoices(params = {}) {
+export async function getGovInvoices(filters = {}) {
   try {
-    const token = localStorage.getItem('authToken');
-    const headers = {
-      "Content-Type": "application/json",
-    };
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    // Build query string
+    const queryParams = new URLSearchParams();
+    if (filters.page) queryParams.append('page', filters.page);
+    if (filters.limit) queryParams.append('limit', filters.limit);
+    if (filters.status) queryParams.append('status', filters.status);
+    if (filters.startDate) queryParams.append('startDate', filters.startDate);
+    if (filters.endDate) queryParams.append('endDate', filters.endDate);
+    if (filters.search) queryParams.append('search', filters.search);
 
-    const queryString = new URLSearchParams(params).toString();
-    const url = `http://localhost:3000/api/gov-invoices${queryString ? `?${queryString}` : ''}`;
+    const queryString = queryParams.toString();
+    const url = `${API_ENDPOINTS.GOV_INVOICES.BASE}${queryString ? `?${queryString}` : ''}`;
     
     const response = await fetch(url, {
       method: "GET",
-      headers,
+      headers: getAuthHeaders(),
     });
 
     const data = await response.json();
@@ -91,45 +85,33 @@ export async function fetchGovInvoices(params = {}) {
     if (response.ok && data.success) {
       return {
         ok: true,
-        status: response.status,
         data: data.data,
         pagination: data.pagination
       };
     } else {
       return {
         ok: false,
-        status: response.status,
-        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
+        error: data.message || 'Failed to fetch invoices'
       };
     }
   } catch (error) {
     return {
       ok: false,
-      status: 0,
-      error: `Network error: ${error.message}`,
+      error: `Network error: ${error.message}`
     };
   }
 }
 
 /**
- * Fetch a single government invoice by ID
+ * Get a specific government invoice by ID
  * @param {string} id - Invoice ID
- * @returns {Promise<{ok: boolean, status: number, data?: any, error?: string}>}
+ * @returns {Promise<{ok: boolean, data?: any, error?: string}>}
  */
-export async function fetchGovInvoice(id) {
+export async function getGovInvoiceById(id) {
   try {
-    const token = localStorage.getItem('authToken');
-    const headers = {
-      "Content-Type": "application/json",
-    };
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`http://localhost:3000/api/gov-invoices/${id}`, {
+    const response = await fetch(API_ENDPOINTS.GOV_INVOICES.BY_ID(id), {
       method: "GET",
-      headers,
+      headers: getAuthHeaders(),
     });
 
     const data = await response.json();
@@ -137,21 +119,18 @@ export async function fetchGovInvoice(id) {
     if (response.ok && data.success) {
       return {
         ok: true,
-        status: response.status,
         data: data.data
       };
     } else {
       return {
         ok: false,
-        status: response.status,
-        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
+        error: data.message || 'Failed to fetch invoice'
       };
     }
   } catch (error) {
     return {
       ok: false,
-      status: 0,
-      error: `Network error: ${error.message}`,
+      error: `Network error: ${error.message}`
     };
   }
 }
@@ -160,22 +139,13 @@ export async function fetchGovInvoice(id) {
  * Update a government invoice
  * @param {string} id - Invoice ID
  * @param {Object} payload - Updated invoice data
- * @returns {Promise<{ok: boolean, status: number, data?: any, error?: string}>}
+ * @returns {Promise<{ok: boolean, data?: any, error?: string}>}
  */
 export async function updateGovInvoice(id, payload) {
   try {
-    const token = localStorage.getItem('authToken');
-    const headers = {
-      "Content-Type": "application/json",
-    };
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`http://localhost:3000/api/gov-invoices/${id}`, {
+    const response = await fetch(API_ENDPOINTS.GOV_INVOICES.BY_ID(id), {
       method: "PUT",
-      headers,
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -184,23 +154,19 @@ export async function updateGovInvoice(id, payload) {
     if (response.ok && data.success) {
       return {
         ok: true,
-        status: response.status,
         data: data.data,
         message: data.message
       };
     } else {
       return {
         ok: false,
-        status: response.status,
-        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
-        errors: data.errors || []
+        error: data.message || 'Failed to update invoice'
       };
     }
   } catch (error) {
     return {
       ok: false,
-      status: 0,
-      error: `Network error: ${error.message}`,
+      error: `Network error: ${error.message}`
     };
   }
 }
@@ -208,22 +174,13 @@ export async function updateGovInvoice(id, payload) {
 /**
  * Delete a government invoice
  * @param {string} id - Invoice ID
- * @returns {Promise<{ok: boolean, status: number, error?: string}>}
+ * @returns {Promise<{ok: boolean, error?: string}>}
  */
 export async function deleteGovInvoice(id) {
   try {
-    const token = localStorage.getItem('authToken');
-    const headers = {
-      "Content-Type": "application/json",
-    };
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`http://localhost:3000/api/gov-invoices/${id}`, {
+    const response = await fetch(API_ENDPOINTS.GOV_INVOICES.BY_ID(id), {
       method: "DELETE",
-      headers,
+      headers: getAuthHeaders(),
     });
 
     const data = await response.json();
@@ -231,21 +188,18 @@ export async function deleteGovInvoice(id) {
     if (response.ok && data.success) {
       return {
         ok: true,
-        status: response.status,
         message: data.message
       };
     } else {
       return {
         ok: false,
-        status: response.status,
-        error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
+        error: data.message || 'Failed to delete invoice'
       };
     }
   } catch (error) {
     return {
       ok: false,
-      status: 0,
-      error: `Network error: ${error.message}`,
+      error: `Network error: ${error.message}`
     };
   }
-} 
+}
