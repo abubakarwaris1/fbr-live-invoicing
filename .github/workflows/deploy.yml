@@ -62,7 +62,7 @@ jobs:
           # Validate required environment variables
           if [ -z "${{ secrets.STATIC_IP }}" ]; then
             echo "❌ STATIC_IP secret is empty!"
-            echo "�� Please check your GitHub Environment 'production' and ensure STATIC_IP is set to: 144.126.251.143"
+            echo "💡 Please check your GitHub Environment 'production' and ensure STATIC_IP is set to: 144.126.251.143"
             exit 1
           fi
           
@@ -183,50 +183,38 @@ jobs:
             # Additional wait for services to be ready
             sleep 10
             
-            # Test health endpoint (nginx health check inside container)
-            echo "🔍 Testing nginx health endpoint inside container..."
-            for i in {1..10}; do
-              if curl -f http://localhost:3000/health; then
-                echo "✅ Nginx health check passed!"
-                break
-              else
-                echo "❌ Nginx health check failed, attempt $i/10"
-                sleep 5
-              fi
-            done
-            
-            # Test API endpoint through container nginx
-            echo "🔍 Testing API endpoint through container nginx..."
-            for i in {1..10}; do
-              if curl -f http://localhost:3000/api/health; then
-                echo "✅ API health check through container nginx passed!"
-                break
-              else
-                echo "❌ API health check through container nginx failed, attempt $i/10"
-                sleep 5
-              fi
-            done
-            
-            # Test frontend through container nginx
-            echo "🔍 Testing frontend through container nginx..."
-            for i in {1..10}; do
-              if curl -f http://localhost:3000/ | grep -q "html"; then
-                echo "✅ Frontend check through container nginx passed!"
-                break
-              else
-                echo "❌ Frontend check through container nginx failed, attempt $i/10"
-                sleep 5
-              fi
-            done
-            
-            # Test external access on port 80
-            echo "🔍 Testing external access on port 80..."
+            # Test health endpoint on external port 80 (FIXED: Using port 80 instead of 3000)
+            echo "🔍 Testing nginx health endpoint on port 80..."
             for i in {1..10}; do
               if curl -f http://localhost/health; then
-                echo "✅ External access on port 80 passed!"
+                echo "✅ Nginx health check on port 80 passed!"
                 break
               else
-                echo "❌ External access on port 80 failed, attempt $i/10"
+                echo "❌ Nginx health check on port 80 failed, attempt $i/10"
+                sleep 5
+              fi
+            done
+            
+            # Test API endpoint through external port 80 (FIXED: Using port 80 instead of 3000)
+            echo "🔍 Testing API endpoint through port 80..."
+            for i in {1..10}; do
+              if curl -f http://localhost/api/health; then
+                echo "✅ API health check through port 80 passed!"
+                break
+              else
+                echo "❌ API health check through port 80 failed, attempt $i/10"
+                sleep 5
+              fi
+            done
+            
+            # Test frontend through external port 80 (FIXED: Using port 80 instead of 3000)
+            echo "🔍 Testing frontend through port 80..."
+            for i in {1..10}; do
+              if curl -f http://localhost/ | grep -q "html"; then
+                echo "✅ Frontend check through port 80 passed!"
+                break
+              else
+                echo "❌ Frontend check through port 80 failed, attempt $i/10"
                 sleep 5
               fi
             done
