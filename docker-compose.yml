@@ -4,7 +4,7 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"  # Nginx inside container on port 3000
+      - "80:3000"  # Map host port 80 to container port 3000
     environment:
       - NODE_ENV=production
       - PORT=3001    # Express.js backend on port 3001

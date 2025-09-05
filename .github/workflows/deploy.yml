@@ -219,6 +219,18 @@ jobs:
               fi
             done
             
+            # Test external access on port 80
+            echo "🔍 Testing external access on port 80..."
+            for i in {1..10}; do
+              if curl -f http://localhost/health; then
+                echo "✅ External access on port 80 passed!"
+                break
+              else
+                echo "❌ External access on port 80 failed, attempt $i/10"
+                sleep 5
+              fi
+            done
+            
             # Show container status
             echo "📊 Container status:"
             docker-compose ps
@@ -245,12 +257,12 @@ jobs:
               body: `🚀 **Application Deployment Successful!**
               
               **Static IP:** ${{ secrets.STATIC_IP }}
-              **Web Interface:** http://${{ secrets.STATIC_IP }}:3000/
-              **API Base URL:** http://${{ secrets.STATIC_IP }}:3000/api
-              **Health Check:** http://${{ secrets.STATIC_IP }}:3000/health
-              **API Health:** http://${{ secrets.STATIC_IP }}:3000/api/health
+              **Web Interface:** http://${{ secrets.STATIC_IP }}/
+              **API Base URL:** http://${{ secrets.STATIC_IP }}/api
+              **Health Check:** http://${{ secrets.STATIC_IP }}/health
+              **API Health:** http://${{ secrets.STATIC_IP }}/api/health
               
-              **Architecture:** Container nginx on port 3000 → Express.js on port 3001`
+              **Architecture:** Host port 80 → Container nginx on port 3000 → Express.js on port 3001`
             })
 
   notify:
@@ -263,8 +275,8 @@ jobs:
         run: |
           if [ "${{ needs.deploy.result }}" == "success" ]; then
             echo "✅ Application deployment successful!"
-            echo "🌐 Web Interface: http://${{ secrets.STATIC_IP }}:3000/"
-            echo "🔗 API Base URL: http://${{ secrets.STATIC_IP }}:3000/api"
+            echo "🌐 Web Interface: http://${{ secrets.STATIC_IP }}/"
+            echo "🔗 API Base URL: http://${{ secrets.STATIC_IP }}/api"
           else
             echo "❌ Application deployment failed!"
           fi
