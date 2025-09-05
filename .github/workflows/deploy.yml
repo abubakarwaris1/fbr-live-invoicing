@@ -42,16 +42,22 @@ jobs:
 
       - name: Setup SSH key
         run: |
+          # Create SSH directory with proper permissions
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          # Write SSH key to file
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          
+          # Add server to known_hosts
           ssh-keyscan -H ${{ secrets.STATIC_IP }} >> ~/.ssh/known_hosts
-
-      - name: Test SSH connection
-        run: |
+          chmod 644 ~/.ssh/known_hosts
+          
+          # Test SSH connection
           ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} "echo 'SSH connection successful'"
 
-      - name: Copy files to server
+      - name: Deploy application to server
         run: |
           # Create tmp directory if it doesn't exist
           mkdir -p /tmp
@@ -70,7 +76,7 @@ jobs:
             /tmp/fbr-live-invoicing.tar.gz \
             root@${{ secrets.STATIC_IP }}:/tmp/
           
-          # Extract on server
+          # Deploy on server
           ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} << 'REMOTE_SCRIPT'
             set -e
             echo "🚀 Starting deployment with nginx proxy architecture..."
@@ -106,6 +112,11 @@ jobs:
             FBR_ACCESS_TOKEN=${{ secrets.FBR_ACCESS_TOKEN }}
             STATIC_IP=${{ secrets.STATIC_IP }}
             EOL
+            
+            # Ensure Docker is running
+            echo "🐳 Ensuring Docker is running..."
+            systemctl start docker || true
+            systemctl enable docker || true
             
             # Ensure nginx proxy is configured on host
             echo "🔧 Ensuring nginx proxy is configured..."
