@@ -54,15 +54,19 @@ jobs:
             --exclude='terraform/terraform.tfstate*' \
             .
           
-          # Copy to server using SSH key from environment
-          scp -i <(echo "${{ env.SERVER_SSH_KEY }}") \
+          # Write SSH key to temporary file
+          echo "${{ env.SERVER_SSH_KEY }}" > /tmp/ssh_key
+          chmod 600 /tmp/ssh_key
+          
+          # Copy to server using SSH key
+          scp -i /tmp/ssh_key \
             -o ConnectTimeout=30 \
             -o StrictHostKeyChecking=no \
             /tmp/fbr-live-invoicing.tar.gz \
             root@${{ env.STATIC_IP }}:/tmp/
           
-          # Deploy on server using SSH key from environment
-          ssh -i <(echo "${{ env.SERVER_SSH_KEY }}") \
+          # Deploy on server using SSH key
+          ssh -i /tmp/ssh_key \
             -o ConnectTimeout=10 \
             -o StrictHostKeyChecking=no \
             root@${{ env.STATIC_IP }} << 'REMOTE_SCRIPT'
@@ -90,7 +94,7 @@ jobs:
             tar -xzf /tmp/fbr-live-invoicing.tar.gz -C /opt/fbr-live-invoicing/
             rm -f /tmp/fbr-live-invoicing.tar.gz
             
-            # Create .env file with environment variables (FIXED: Using echo commands)
+            # Create .env file with environment variables
             echo "📝 Creating environment file..."
             echo "NODE_ENV=production" > /opt/fbr-live-invoicing/.env
             echo "PORT=3001" >> /opt/fbr-live-invoicing/.env
@@ -182,6 +186,9 @@ jobs:
             
             echo "🎉 Deployment completed successfully!"
           REMOTE_SCRIPT
+          
+          # Clean up SSH key
+          rm -f /tmp/ssh_key
 
       - name: Comment deployment info
         uses: actions/github-script@v7
