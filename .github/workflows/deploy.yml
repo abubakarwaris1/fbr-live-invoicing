@@ -90,16 +90,14 @@ jobs:
             tar -xzf /tmp/fbr-live-invoicing.tar.gz -C /opt/fbr-live-invoicing/
             rm -f /tmp/fbr-live-invoicing.tar.gz
             
-            # Create .env file with environment variables
+            # Create .env file with environment variables (FIXED: Using echo commands)
             echo "📝 Creating environment file..."
-            cat > /opt/fbr-live-invoicing/.env << 'EOL'
-NODE_ENV=production
-PORT=3001
-MONGODB_URI=${{ env.MONGODB_URI }}
-JWT_SECRET=${{ env.JWT_SECRET }}
-FBR_ACCESS_TOKEN=${{ env.FBR_ACCESS_TOKEN }}
-STATIC_IP=${{ env.STATIC_IP }}
-EOL
+            echo "NODE_ENV=production" > /opt/fbr-live-invoicing/.env
+            echo "PORT=3001" >> /opt/fbr-live-invoicing/.env
+            echo "MONGODB_URI=${{ env.MONGODB_URI }}" >> /opt/fbr-live-invoicing/.env
+            echo "JWT_SECRET=${{ env.JWT_SECRET }}" >> /opt/fbr-live-invoicing/.env
+            echo "FBR_ACCESS_TOKEN=${{ env.FBR_ACCESS_TOKEN }}" >> /opt/fbr-live-invoicing/.env
+            echo "STATIC_IP=${{ env.STATIC_IP }}" >> /opt/fbr-live-invoicing/.env
             
             # Ensure Docker is running
             echo "🐳 Ensuring Docker is running..."
