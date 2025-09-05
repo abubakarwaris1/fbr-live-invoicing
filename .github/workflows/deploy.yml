@@ -1,41 +1,9 @@
-name: Deploy Application
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Run tests (if any)
-      run: npm test --if-present
-
-    - name: Build client
-      run: npm run build:client
-
   deploy:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment: production
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -48,49 +16,37 @@ jobs:
         ssh-keyscan -H ${{ secrets.STATIC_IP }} >> ~/.ssh/known_hosts
 
     - name: Test SSH connection
-      run: |
-        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} "echo 'SSH connection successful'"
+      run: ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} "echo 'SSH OK'"
 
-    - name: Copy files to server
+    # ✅ Stream the tarball directly over SSH (no /tmp on either side)
+    - name: Upload & extract release on server
       run: |
-        # Create tmp directory if it doesn't exist
-        mkdir -p /tmp
-        
-        # Create tar file
-        tar -czf /tmp/fbr-live-invoicing.tar.gz --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='terraform/.terraform' --exclude='terraform/terraform.tfstate*' .
-        
-        # Copy to server
-        scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no /tmp/fbr-live-invoicing.tar.gz root@${{ secrets.STATIC_IP }}:/tmp/
-        
-        # Extract on server
-        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} << 'REMOTE_SCRIPT'
-          set -e
-          echo "🚀 Starting deployment with nginx inside container..."
-          
-          # Create application directory
-          mkdir -p /opt/fbr-live-invoicing
+        tar -czf - \
+          --exclude='.git' \
+          --exclude='node_modules' \
+          --exclude='.env' \
+          --exclude='terraform/.terraform' \
+          --exclude='terraform/terraform.tfstate*' \
+          . \
+        | ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} \
+          "mkdir -p /opt/fbr-live-invoicing && tar -xzf - -C /opt/fbr-live-invoicing"
+
+    - name: Deploy on server (build & start)
+      run: |
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} << 'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+          echo "🚀 Deploying…"
           cd /opt/fbr-live-invoicing
-          
-          # Stop and remove existing containers
-          echo "🛑 Stopping and removing existing containers..."
-          docker-compose down || true
-          docker stop fbr-live-invoicing || true
-          docker rm -f fbr-live-invoicing || true
-          
-          # Remove old images to save space
-          echo "🧹 Cleaning up old images..."
-          docker rmi fbr-live-invoicing:latest || true
-          docker system prune -f || true
-          
-          # Extract application files
-          echo "📁 Extracting application files..."
-          rm -rf /opt/fbr-live-invoicing/*
-          tar -xzf /tmp/fbr-live-invoicing.tar.gz -C /opt/fbr-live-invoicing/
-          rm -f /tmp/fbr-live-invoicing.tar.gz
-          
-          # Create .env file with secrets
-          echo "📝 Creating environment file..."
-          cat > /opt/fbr-live-invoicing/.env << EOL
+
+          # Ensure docker compose v2 is available
+          if command -v docker-compose >/dev/null 2>&1; then
+            alias dcompose='docker-compose'
+          else
+            alias dcompose='docker compose'
+          fi
+
+          echo "📝 Writing .env"
+          cat > .env << 'EOL'
           NODE_ENV=production
           PORT=3001
           MONGODB_URI=${{ secrets.MONGODB_URI }}
@@ -98,83 +54,44 @@ jobs:
           FBR_ACCESS_TOKEN=${{ secrets.FBR_ACCESS_TOKEN }}
           STATIC_IP=${{ secrets.STATIC_IP }}
           EOL
-          
-          # Build and start the container with nginx inside
-          echo "🔨 Building and starting container with nginx..."
-          cd /opt/fbr-live-invoicing
-          docker-compose up -d --build
-          
-          # Wait for application to start
-          echo "⏳ Waiting for application to start..."
-          sleep 30
-          
-          # Test health endpoint
-          echo "🔍 Testing health endpoint..."
+
+          echo "🛑 Stopping old stack (ignore errors if not running)…"
+          dcompose down || true
+          docker stop fbr-live-invoicing || true
+          docker rm -f fbr-live-invoicing || true
+
+          echo "🧹 Pruning old images (optional)…"
+          docker image prune -f || true
+
+          echo "🔨 Building & starting"
+          dcompose up -d --build
+
+          echo "⏳ Waiting for app"
+          sleep 10
+
+          echo "🔍 Health checks"
+          # If Nginx is inside container exposing 3000, /health should exist in your Nginx config
           for i in {1..10}; do
-            if curl -f http://localhost:3000/health; then
-              echo "✅ Nginx health check passed!"
+            if curl -fsS http://localhost:3000/health; then
+              echo "✅ Nginx health OK"
               break
             else
-              echo "❌ Nginx health check failed, attempt $i/10"
-              sleep 5
+              echo "…retry $i"; sleep 3
             fi
           done
-          
-          # Test API endpoint
-          echo "🔍 Testing API endpoint..."
-          for i in {1..5}; do
-            if curl -f http://localhost:3000/api/health; then
-              echo "✅ API health check passed!"
+
+          for i in {1..10}; do
+            if curl -fsS http://localhost:3000/api/health; then
+              echo "✅ API health OK"
               break
             else
-              echo "❌ API health check failed, attempt $i/5"
-              sleep 5
+              echo "…retry $i"; sleep 3
             fi
           done
-          
-          # Show container status
-          echo "📊 Container status:"
-          docker-compose ps
-          
-          # Show logs
-          echo "📋 Recent logs:"
-          docker-compose logs --tail=20
-          
-          echo "🎉 Deployment completed successfully!"
+
+          echo "📊 Compose status"
+          dcompose ps
+
+          echo "📋 Recent logs"
+          dcompose logs --tail=50
         REMOTE_SCRIPT
-
-    - name: Comment deployment info
-      uses: actions/github-script@v7
-      if: github.event_name == 'pull_request'
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `🚀 **Application Deployment Successful!**
-            
-            **Static IP:** ${{ secrets.STATIC_IP }}
-            **Web Interface:** http://${{ secrets.STATIC_IP }}:3000
-            **API Base URL:** http://${{ secrets.STATIC_IP }}:3000/api
-            **Health Check:** http://${{ secrets.STATIC_IP }}:3000/health
-            **API Health:** http://${{ secrets.STATIC_IP }}:3000/api/health
-            
-            **Architecture:** Nginx inside container on port 3000, Express.js backend on port 3001`
-          })
-
-  notify:
-    needs: [deploy]
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-    - name: Notify deployment status
-      run: |
-        if [ "${{ needs.deploy.result }}" == "success" ]; then
-          echo "✅ Application deployment successful!"
-          echo "🌐 Web Interface: http://${{ secrets.STATIC_IP }}:3000"
-          echo "🔗 API Base URL: http://${{ secrets.STATIC_IP }}:3000/api"
-        else
-          echo "❌ Application deployment failed!"
-        fi
