@@ -49,7 +49,7 @@ jobs:
 
     - name: Test SSH connection
       run: |
-        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} "echo 'SSH connection successful'"
+        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@144.126.251.143 "echo 'SSH connection successful'"
 
     - name: Copy files to server
       run: |
