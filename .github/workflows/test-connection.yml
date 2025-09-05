@@ -1,0 +1,27 @@
+name: Test SSH Connection
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-ssh:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.STATIC_IP }} >> ~/.ssh/known_hosts
+
+    - name: Test SSH connection
+      run: |
+        echo "Testing SSH connection to ${{ secrets.STATIC_IP }}"
+        ssh -v -o ConnectTimeout=30 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} "echo 'SSH connection successful'; whoami; pwd; ls -la /opt/"
+
+    - name: Test network connectivity
+      run: |
+        echo "Testing network connectivity..."
+        ping -c 3 ${{ secrets.STATIC_IP }}
+        telnet ${{ secrets.STATIC_IP }} 22 || echo "Telnet test completed"
