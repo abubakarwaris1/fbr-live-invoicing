@@ -145,6 +145,7 @@ jobs:
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /opt/fbr-live-invoicing/.env
             echo "FBR_ACCESS_TOKEN=${{ secrets.FBR_ACCESS_TOKEN }}" >> /opt/fbr-live-invoicing/.env
             echo "STATIC_IP=${{ secrets.STATIC_IP }}" >> /opt/fbr-live-invoicing/.env
+            echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> /opt/fbr-live-invoicing/.env
             
             # Ensure Docker is running
             echo "🐳 Ensuring Docker is running..."

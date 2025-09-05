@@ -2,7 +2,8 @@
  * Authentication service for handling login, logout, and token management
  */
 
-const API_BASE = 'http://localhost:3000/api';
+// Use relative URL for production, fallback to localhost for development
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api');
 
 // Token management
 export const getToken = () => {
