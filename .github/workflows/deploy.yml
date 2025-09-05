@@ -40,23 +40,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug environment variables
+        run: |
+          echo "🔍 Debugging ALL environment variables..."
+          echo "=========================================="
+          echo "STATIC_IP: '${{ env.STATIC_IP }}'"
+          echo "SERVER_SSH_KEY present: $([ -n "${{ env.SERVER_SSH_KEY }}" ] && echo "YES" || echo "NO")"
+          echo "MONGODB_URI present: $([ -n "${{ env.MONGODB_URI }}" ] && echo "YES" || echo "NO")"
+          echo "JWT_SECRET present: $([ -n "${{ env.JWT_SECRET }}" ] && echo "YES" || echo "NO")"
+          echo "FBR_ACCESS_TOKEN present: $([ -n "${{ env.FBR_ACCESS_TOKEN }}" ] && echo "YES" || echo "NO")"
+          echo "DIGITALOCEAN_TOKEN present: $([ -n "${{ env.DIGITALOCEAN_TOKEN }}" ] && echo "YES" || echo "NO")"
+          echo "=========================================="
+          
+          # Check if we're in the right environment
+          echo "Current environment: ${{ github.environment }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+
       - name: Deploy application to server
         run: |
-          # Debug: Check environment variables
-          echo "🔍 Debugging environment variables..."
-          echo "STATIC_IP: '${{ env.STATIC_IP }}'"
-          echo "SERVER_SSH_KEY length: ${#{{ env.SERVER_SSH_KEY }}}"
-          
           # Validate required environment variables
           if [ -z "${{ env.STATIC_IP }}" ]; then
             echo "❌ STATIC_IP environment variable is empty!"
+            echo "💡 Please check your GitHub Environment 'production' and ensure STATIC_IP is set to: 144.126.251.143"
             exit 1
           fi
           
           if [ -z "${{ env.SERVER_SSH_KEY }}" ]; then
             echo "❌ SERVER_SSH_KEY environment variable is empty!"
+            echo "💡 Please check your GitHub Environment 'production' and ensure SERVER_SSH_KEY is set"
             exit 1
           fi
+          
+          echo "✅ All required environment variables are present"
+          echo "🎯 Using STATIC_IP: ${{ env.STATIC_IP }}"
           
           # Create tmp directory if it doesn't exist
           mkdir -p /tmp
@@ -75,7 +92,7 @@ jobs:
           chmod 600 /tmp/ssh_key
           
           # Test SSH connection first
-          echo "🔍 Testing SSH connection..."
+          echo "🔍 Testing SSH connection to ${{ env.STATIC_IP }}..."
           ssh -i /tmp/ssh_key \
             -o ConnectTimeout=10 \
             -o StrictHostKeyChecking=no \
