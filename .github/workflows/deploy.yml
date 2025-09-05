@@ -47,7 +47,7 @@ jobs:
           chmod 700 ~/.ssh
           
           # Write SSH key to file (handle potential formatting issues)
-          echo "${{ secrets.SERVER_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          echo "${{ env.SERVER_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
           # Validate SSH key format
@@ -57,12 +57,12 @@ jobs:
           fi
           
           # Add server to known_hosts
-          ssh-keyscan -H ${{ secrets.STATIC_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ env.STATIC_IP }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
           
           # Test SSH connection with retry
           for i in {1..3}; do
-            if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} "echo 'SSH connection successful'"; then
+            if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ env.STATIC_IP }} "echo 'SSH connection successful'"; then
               echo "✅ SSH connection successful"
               break
             else
@@ -92,10 +92,10 @@ jobs:
           # Copy to server
           scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no \
             /tmp/fbr-live-invoicing.tar.gz \
-            root@${{ secrets.STATIC_IP }}:/tmp/
+            root@${{ env.STATIC_IP }}:/tmp/
           
           # Deploy on server
-          ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ secrets.STATIC_IP }} << 'REMOTE_SCRIPT'
+          ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no root@${{ env.STATIC_IP }} << 'REMOTE_SCRIPT'
             set -e
             echo "🚀 Starting deployment with nginx inside container..."
             
@@ -110,7 +110,7 @@ jobs:
             docker rm -f fbr-live-invoicing || true
             
             # Remove old images to save space
-            echo "�� Cleaning up old images..."
+            echo "🧹 Cleaning up old images..."
             docker rmi fbr-live-invoicing:latest || true
             docker system prune -f || true
             
@@ -120,15 +120,15 @@ jobs:
             tar -xzf /tmp/fbr-live-invoicing.tar.gz -C /opt/fbr-live-invoicing/
             rm -f /tmp/fbr-live-invoicing.tar.gz
             
-            # Create .env file with secrets
+            # Create .env file with environment variables (FIXED: Using env.* syntax)
             echo "📝 Creating environment file..."
-            cat > /opt/fbr-live-invoicing/.env << EOL
+            cat > /opt/fbr-live-invoicing/.env << 'EOL'
             NODE_ENV=production
             PORT=3001
-            MONGODB_URI=${{ secrets.MONGODB_URI }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            FBR_ACCESS_TOKEN=${{ secrets.FBR_ACCESS_TOKEN }}
-            STATIC_IP=${{ secrets.STATIC_IP }}
+            MONGODB_URI=${{ env.MONGODB_URI }}
+            JWT_SECRET=${{ env.JWT_SECRET }}
+            FBR_ACCESS_TOKEN=${{ env.FBR_ACCESS_TOKEN }}
+            STATIC_IP=${{ env.STATIC_IP }}
             EOL
             
             # Ensure Docker is running
@@ -212,7 +212,7 @@ jobs:
             echo "📋 Recent logs:"
             docker-compose logs --tail=20
             
-            echo "�� Deployment completed successfully!"
+            echo "🎉 Deployment completed successfully!"
           REMOTE_SCRIPT
 
       - name: Comment deployment info
@@ -226,11 +226,11 @@ jobs:
               repo: context.repo.repo,
               body: `🚀 **Application Deployment Successful!**
               
-              **Static IP:** ${{ secrets.STATIC_IP }}
-              **Web Interface:** http://${{ secrets.STATIC_IP }}:3000/
-              **API Base URL:** http://${{ secrets.STATIC_IP }}:3000/api
-              **Health Check:** http://${{ secrets.STATIC_IP }}:3000/health
-              **API Health:** http://${{ secrets.STATIC_IP }}:3000/api/health
+              **Static IP:** ${{ env.STATIC_IP }}
+              **Web Interface:** http://${{ env.STATIC_IP }}:3000/
+              **API Base URL:** http://${{ env.STATIC_IP }}:3000/api
+              **Health Check:** http://${{ env.STATIC_IP }}:3000/health
+              **API Health:** http://${{ env.STATIC_IP }}:3000/api/health
               
               **Architecture:** Container nginx on port 3000 → Express.js on port 3001`
             })
@@ -245,8 +245,8 @@ jobs:
         run: |
           if [ "${{ needs.deploy.result }}" == "success" ]; then
             echo "✅ Application deployment successful!"
-            echo "🌐 Web Interface: http://${{ secrets.STATIC_IP }}:3000/"
-            echo "🔗 API Base URL: http://${{ secrets.STATIC_IP }}:3000/api"
+            echo "🌐 Web Interface: http://${{ env.STATIC_IP }}:3000/"
+            echo "🔗 API Base URL: http://${{ env.STATIC_IP }}:3000/api"
           else
             echo "❌ Application deployment failed!"
           fi
