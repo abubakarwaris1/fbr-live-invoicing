@@ -40,6 +40,7 @@ app.use(helmet({
   crossOriginOpenerPolicy: false, // Disable COOP to avoid browser warnings
 }));
 
+
 app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());

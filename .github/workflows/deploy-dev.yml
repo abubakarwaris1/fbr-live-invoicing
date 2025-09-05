@@ -41,7 +41,7 @@ jobs:
     - name: Copy files to server
       uses: appleboy/scp-action@v0.1.4
       with:
-        host: ${{ secrets.SERVER_IP }}
+        host: ${{ secrets.STATIC_IP }}
         username: root
         key: ${{ secrets.SERVER_SSH_KEY }}
         source: "."
@@ -51,7 +51,7 @@ jobs:
     - name: Deploy development application
       uses: appleboy/ssh-action@v1.0.0
       with:
-        host: ${{ secrets.SERVER_IP }}
+        host: ${{ secrets.STATIC_IP }}
         username: root
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
@@ -119,9 +119,9 @@ jobs:
             body: `🚀 **Development Deployment Successful!**
             
             **Branch:** ${{ github.ref_name }}
-            **Server IP:** ${{ secrets.SERVER_IP }}
-            **Development URL:** http://${{ secrets.SERVER_IP }}:3001
-            **API Base URL:** http://${{ secrets.SERVER_IP }}:3001/api
+            **Static IP:** ${{ secrets.STATIC_IP }}
+            **Development URL:** http://${{ secrets.STATIC_IP }}:3001
+            **API Base URL:** http://${{ secrets.STATIC_IP }}:3001/api
             
             **Note:** This is a development deployment on port 3001`
           })
