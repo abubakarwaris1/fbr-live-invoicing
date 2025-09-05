@@ -42,6 +42,22 @@ jobs:
 
       - name: Deploy application to server
         run: |
+          # Debug: Check environment variables
+          echo "🔍 Debugging environment variables..."
+          echo "STATIC_IP: '${{ env.STATIC_IP }}'"
+          echo "SERVER_SSH_KEY length: ${#{{ env.SERVER_SSH_KEY }}}"
+          
+          # Validate required environment variables
+          if [ -z "${{ env.STATIC_IP }}" ]; then
+            echo "❌ STATIC_IP environment variable is empty!"
+            exit 1
+          fi
+          
+          if [ -z "${{ env.SERVER_SSH_KEY }}" ]; then
+            echo "❌ SERVER_SSH_KEY environment variable is empty!"
+            exit 1
+          fi
+          
           # Create tmp directory if it doesn't exist
           mkdir -p /tmp
           
@@ -58,7 +74,16 @@ jobs:
           echo "${{ env.SERVER_SSH_KEY }}" > /tmp/ssh_key
           chmod 600 /tmp/ssh_key
           
+          # Test SSH connection first
+          echo "🔍 Testing SSH connection..."
+          ssh -i /tmp/ssh_key \
+            -o ConnectTimeout=10 \
+            -o StrictHostKeyChecking=no \
+            -o BatchMode=yes \
+            root@${{ env.STATIC_IP }} "echo 'SSH connection successful'"
+          
           # Copy to server using SSH key
+          echo "📁 Copying files to server..."
           scp -i /tmp/ssh_key \
             -o ConnectTimeout=30 \
             -o StrictHostKeyChecking=no \
@@ -66,6 +91,7 @@ jobs:
             root@${{ env.STATIC_IP }}:/tmp/
           
           # Deploy on server using SSH key
+          echo "🚀 Deploying application..."
           ssh -i /tmp/ssh_key \
             -o ConnectTimeout=10 \
             -o StrictHostKeyChecking=no \
