@@ -17,10 +17,28 @@ if ! command -v docker-compose &> /dev/null; then
     chmod +x /usr/local/bin/docker-compose
 fi
 
-# Configure firewall to allow HTTP and HTTPS
+# Configure firewall properly - ALLOW SSH, not LIMIT
+echo "🔧 Configuring UFW firewall..."
+ufw --force reset
+ufw default deny incoming
+ufw default allow outgoing
+
+# Allow SSH (port 22) - ALLOW not LIMIT
+ufw allow 22/tcp
+
+# Allow HTTP and HTTPS
 ufw allow 80/tcp
 ufw allow 443/tcp
+
+# Allow application port
+ufw allow 3000/tcp
+
+# Enable firewall
 ufw --force enable
+
+# Verify firewall status
+echo "📋 Firewall status:"
+ufw status
 
 # Create application directory
 mkdir -p /opt/fbr-live-invoicing
@@ -78,6 +96,6 @@ echo "1. Update .env file with actual values"
 echo "2. Copy your application code to /opt/fbr-live-invoicing/"
 echo "3. Run: docker-compose up -d"
 echo "4. Check logs: docker-compose logs -f"
-echo "✅ Firewall configured to allow HTTP/HTTPS"
+echo "✅ Firewall configured to ALLOW SSH (not LIMIT)"
 echo "✅ Docker and Docker Compose installed"
 echo "✅ No nginx proxy needed - handled inside container"
